@@ -9,7 +9,7 @@ from keras.models import load_model
 from model import loss
 
 
-K.image_data_format('th')
+K.set_image_dim_ordering('th')
 
 
 # learning rate schedule
