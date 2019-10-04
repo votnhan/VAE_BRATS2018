@@ -5,7 +5,7 @@ import itertools
 
 import numpy as np
 
-from .utils import pickle_dump, pickle_load
+from utils import pickle_dump, pickle_load
 from augment import random_permutation_x_y
 
 
