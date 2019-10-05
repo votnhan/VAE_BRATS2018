@@ -242,7 +242,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
     ## Green Block x1 (output filters = 32)
     x1 = green_block(x, 32/2, name='x1')
     x = Conv3D(
-        filters=32/2,
+        filters=32//2,
         kernel_size=(3, 3, 3),
         strides=2,
         padding='same',
@@ -250,10 +250,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_32')(x1)
 
     ## Green Block x2 (output filters = 64)
-    x = green_block(x, 64/2, name='Enc_64_1')
-    x2 = green_block(x, 64/2, name='x2')
+    x = green_block(x, 64//2, name='Enc_64_1')
+    x2 = green_block(x, 64//2, name='x2')
     x = Conv3D(
-        filters=64/2,
+        filters=64//2,
         kernel_size=(3, 3, 3),
         strides=2,
         padding='same',
@@ -261,10 +261,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_64')(x2)
 
     ## Green Blocks x2 (output filters = 128)
-    x = green_block(x, 128/2, name='Enc_128_1')
-    x3 = green_block(x, 128/2, name='x3')
+    x = green_block(x, 128//2, name='Enc_128_1')
+    x3 = green_block(x, 128//2, name='x3')
     x = Conv3D(
-        filters=128/2,
+        filters=128//2,
         kernel_size=(3, 3, 3),
         strides=2,
         padding='same',
@@ -272,10 +272,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_128')(x3)
 
     ## Green Blocks x4 (output filters = 256)
-    x = green_block(x, 256/2, name='Enc_256_1')
-    x = green_block(x, 256/2, name='Enc_256_2')
-    x = green_block(x, 256/2, name='Enc_256_3')
-    x4 = green_block(x, 256/2, name='x4')
+    x = green_block(x, 256//2, name='Enc_256_1')
+    x = green_block(x, 256//2, name='Enc_256_2')
+    x = green_block(x, 256//2, name='Enc_256_3')
+    x4 = green_block(x, 256//2, name='x4')
 
     # -------------------------------------------------------------------------
     # Decoder
@@ -286,7 +286,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
 
     ### Green Block x1 (output filters=128)
     x = Conv3D(
-        filters=128/2,
+        filters=128//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -296,11 +296,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_128')(x)
     x = Add(name='Input_Dec_GT_128')([x, x3])
-    x = green_block(x, 128/2, name='Dec_GT_128')
+    x = green_block(x, 128//2, name='Dec_GT_128')
 
     ### Green Block x1 (output filters=64)
     x = Conv3D(
-        filters=64/2,
+        filters=64//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -310,11 +310,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_64')(x)
     x = Add(name='Input_Dec_GT_64')([x, x2])
-    x = green_block(x, 64/2, name='Dec_GT_64')
+    x = green_block(x, 64//2, name='Dec_GT_64')
 
     ### Green Block x1 (output filters=32)
     x = Conv3D(
-        filters=32/2,
+        filters=32//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -324,11 +324,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_32')(x)
     x = Add(name='Input_Dec_GT_32')([x, x1])
-    x = green_block(x, 32/2, name='Dec_GT_32')
+    x = green_block(x, 32//2, name='Dec_GT_32')
 
     ### Blue Block x1 (output filters=32)
     x = Conv3D(
-        filters=32/2,
+        filters=32//2,
         kernel_size=(3, 3, 3),
         strides=1,
         padding='same',
