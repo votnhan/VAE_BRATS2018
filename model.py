@@ -240,7 +240,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
     x = Dropout(0.2)(x)
 
     ## Green Block x1 (output filters = 32)
-    x1 = green_block(x, 32/2, name='x1')
+    x1 = green_block(x, 32//2, name='x1')
     x = Conv3D(
         filters=32//2,
         kernel_size=(3, 3, 3),
