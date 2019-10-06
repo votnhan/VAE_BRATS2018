@@ -192,11 +192,12 @@ def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight
     )
 
     def loss_(y_true, y_pred):
-        y_true_f = K.flatten(y_true)
-        y_pred_f = K.flatten(y_pred)
-        intersection = K.sum(K.abs(y_true_f * y_pred_f), axis=-1)
-        loss_dice = (2. * intersection) / (
-            K.sum(K.square(y_true_f), -1) + K.sum(K.square(y_pred_f), -1) + e)
+        # y_true_f = K.flatten(y_true)
+        # y_pred_f = K.flatten(y_pred)
+        # intersection = K.sum(K.abs(y_true_f * y_pred_f), axis=-1)
+        # loss_dice = (2. * intersection) / (
+        #     K.sum(K.square(y_true_f), -1) + K.sum(K.square(y_pred_f), -1) + e)
+        loss_dice = weighted_dice_coefficient(y_true, y_pred)
 
         return - loss_dice + weight_L2 * loss_L2 + weight_KL * loss_KL
 
