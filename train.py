@@ -32,7 +32,7 @@ config["augment"] = config["flip"] or config["distort"]
 config["skip_blank"] = False  # if True, then patches without any target will be skipped
 
 config["data_file"] = os.path.abspath("brats_data_isensee_2018.h5")
-config["model_file"] = os.path.abspath("isensee_2018_model.h5")
+config["model_file"] = os.path.abspath("VAE_2018_model.h5")
 config["weigths_file"] = os.path.abspath("isensee_2018_weights.h5")
 config["training_file"] = os.path.abspath("isensee_training_ids.pkl")
 config["validation_file"] = os.path.abspath("isensee_validation_ids.pkl")
@@ -61,7 +61,6 @@ train_generator, validation_generator, n_train_steps, n_validation_steps = get_t
 # Build model
 
 if not config["overwrite"] and os.path.exists(config["model_file"]):
-    pass
     model = load_old_model(config["model_file"])
 else:
     # Tao model moi
