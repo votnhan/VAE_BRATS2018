@@ -6,7 +6,7 @@ from keras.optimizers import SGD, Adam
 from keras.callbacks import ModelCheckpoint, CSVLogger, LearningRateScheduler, ReduceLROnPlateau, EarlyStopping
 from keras.models import load_model
 
-from model import loss
+from model import loss, weighted_dice_coefficient, build_model
 
 
 K.set_image_dim_ordering('th')
@@ -36,8 +36,10 @@ def get_callbacks(model_file, initial_learning_rate=0.0001, learning_rate_drop=0
 
 def load_old_model(model_file):
     print("Loading pre-trained model")
-
-    model = load_model(model_file)
+    input_shape = (4, 128, 128, 128)
+    initial_learning_rate = 0.5e-4
+    model = build_model(input_shape=input_shape, output_channels=4, learning_rate=initial_learning_rate)
+    model.load_weights(model_file)
     return model
 
 
