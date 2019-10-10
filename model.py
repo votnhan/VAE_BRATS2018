@@ -9,6 +9,7 @@ from keras.layers import Conv3D, Activation, Add, UpSampling3D, Lambda, Dense, S
 from keras.layers import Input, Reshape, Flatten, Dropout
 from keras.optimizers import adam
 from keras.models import Model
+from keras import losses
 try:
     from group_norm import GroupNormalization
 except ImportError:
@@ -131,6 +132,28 @@ def weighted_dice_coefficient(y_true, y_pred):
     dice_score_each_class = 2*(intersection + smooth/2) / (sum_y_true + sum_y_pred + smooth)
     return K.mean(dice_score_each_class)
 
+def dice_whole_tumor(y_true, y_pred):
+    y_true = y_true[0, 1:]
+    y_pred = y_pred[0, 1:]
+    return dice_coefficient_square(y_true, y_pred)
+
+
+def dice_tumor_core(y_true, y_pred):
+    y_true_1 = y_true[0, 1]
+    y_true_4 = y_true[0, 3]
+    y_true = K.concatenate(y_true_1, y_true_4)
+
+    y_pred_1 = y_pred[0, 1]
+    y_pred_4 = y_pred[0, 3]
+    y_pred = K.concatenate(y_pred_1, y_pred_4)
+    return dice_coefficient_square(y_true, y_pred)
+
+
+def dice_enhancing_tumor_core(y_true, y_pred):
+    y_true = y_true[0, 3]
+    y_pred = y_pred[0, 3]
+    return dice_coefficient_square(y_true, y_pred)
+
 
 def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight_KL=0.1):
     """
@@ -191,6 +214,8 @@ def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight
         axis=-1
     )
 
+    weight_ce_loss = 0.1
+
     def loss_(y_true, y_pred):
         # y_true_f = K.flatten(y_true)
         # y_pred_f = K.flatten(y_pred)
@@ -199,7 +224,8 @@ def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight
         #     K.sum(K.square(y_true_f), -1) + K.sum(K.square(y_pred_f), -1) + e)
         loss_dice = weighted_dice_coefficient(y_true, y_pred)
 
-        return - loss_dice + weight_L2 * loss_L2 + weight_KL * loss_KL
+        return - loss_dice + weight_L2 * loss_L2 + weight_KL * loss_KL 
+        + weight_ce_loss*losses.categorical_crossentropy(y_true, y_pred)
 
     return loss_
 
@@ -259,7 +285,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
     x = Dropout(0.2)(x)
 
     ## Green Block x1 (output filters = 32)
-    x1 = green_block(x, 32//2, name='x1')
+    x1 = green_block(x, 32, name='x1')
     x = Conv3D(
         filters=32//2,
         kernel_size=(3, 3, 3),
@@ -269,10 +295,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_32')(x1)
 
     ## Green Block x2 (output filters = 64)
-    x = green_block(x, 64//2, name='Enc_64_1')
-    x2 = green_block(x, 64//2, name='x2')
+    x = green_block(x, 64, name='Enc_64_1')
+    x2 = green_block(x, 64, name='x2')
     x = Conv3D(
-        filters=64//2,
+        filters=64,
         kernel_size=(3, 3, 3),
         strides=2,
         padding='same',
@@ -280,10 +306,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_64')(x2)
 
     ## Green Blocks x2 (output filters = 128)
-    x = green_block(x, 128//2, name='Enc_128_1')
-    x3 = green_block(x, 128//2, name='x3')
+    x = green_block(x, 128, name='Enc_128_1')
+    x3 = green_block(x, 128, name='x3')
     x = Conv3D(
-        filters=128//2,
+        filters=128,
         kernel_size=(3, 3, 3),
         strides=2,
         padding='same',
@@ -291,10 +317,10 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Enc_DownSample_128')(x3)
 
     ## Green Blocks x4 (output filters = 256)
-    x = green_block(x, 256//2, name='Enc_256_1')
-    x = green_block(x, 256//2, name='Enc_256_2')
-    x = green_block(x, 256//2, name='Enc_256_3')
-    x4 = green_block(x, 256//2, name='x4')
+    x = green_block(x, 256, name='Enc_256_1')
+    x = green_block(x, 256, name='Enc_256_2')
+    x = green_block(x, 256, name='Enc_256_3')
+    x4 = green_block(x, 256, name='x4')
 
     # -------------------------------------------------------------------------
     # Decoder
@@ -305,7 +331,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
 
     ### Green Block x1 (output filters=128)
     x = Conv3D(
-        filters=128//2,
+        filters=128,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -315,11 +341,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_128')(x)
     x = Add(name='Input_Dec_GT_128')([x, x3])
-    x = green_block(x, 128//2, name='Dec_GT_128')
+    x = green_block(x, 128, name='Dec_GT_128')
 
     ### Green Block x1 (output filters=64)
     x = Conv3D(
-        filters=64//2,
+        filters=64,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -329,11 +355,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_64')(x)
     x = Add(name='Input_Dec_GT_64')([x, x2])
-    x = green_block(x, 64//2, name='Dec_GT_64')
+    x = green_block(x, 64, name='Dec_GT_64')
 
     ### Green Block x1 (output filters=32)
     x = Conv3D(
-        filters=32//2,
+        filters=32,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -343,11 +369,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         data_format='channels_first',
         name='Dec_GT_UpSample_32')(x)
     x = Add(name='Input_Dec_GT_32')([x, x1])
-    x = green_block(x, 32//2, name='Dec_GT_32')
+    x = green_block(x, 32, name='Dec_GT_32')
 
     ### Blue Block x1 (output filters=32)
     x = Conv3D(
-        filters=32//2,
+        filters=32,
         kernel_size=(3, 3, 3),
         strides=1,
         padding='same',
@@ -364,7 +390,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         name='Dec_GT_Output')(x)
 
     ### Output Block
-    out_GT = Softmax(axis=1)(x)
+    out_GT = Softmax(axis=1, name='out_GT')(x)
 
     ## VAE (Variational Auto Encoder) Part
     # -------------------------------------------------------------------------
@@ -396,7 +422,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
     # (1x10x12x8)
     x = Reshape(((c//4), (H//16), (W//16), (D//16)))(x)
     x = Conv3D(
-        filters=256,
+        filters=256//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -408,7 +434,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
 
     ### Green Block x1 (output filters=128)
     x = Conv3D(
-        filters=128,
+        filters=128//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -417,11 +443,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         size=2,
         data_format='channels_first',
         name='Dec_VAE_UpSample_128')(x)
-    x = green_block(x, 128, name='Dec_VAE_128')
+    x = green_block(x, 128//2, name='Dec_VAE_128')
 
     ### Green Block x1 (output filters=64)
     x = Conv3D(
-        filters=64,
+        filters=64//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -430,11 +456,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         size=2,
         data_format='channels_first',
         name='Dec_VAE_UpSample_64')(x)
-    x = green_block(x, 64, name='Dec_VAE_64')
+    x = green_block(x, 64//2, name='Dec_VAE_64')
 
     ### Green Block x1 (output filters=32)
     x = Conv3D(
-        filters=32,
+        filters=32//2,
         kernel_size=(1, 1, 1),
         strides=1,
         data_format='channels_first',
@@ -443,11 +469,11 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
         size=2,
         data_format='channels_first',
         name='Dec_VAE_UpSample_32')(x)
-    x = green_block(x, 32, name='Dec_VAE_32')
+    x = green_block(x, 32//2, name='Dec_VAE_32')
 
     ### Blue Block x1 (output filters=32)
     x = Conv3D(
-        filters=32,
+        filters=32//2,
         kernel_size=(3, 3, 3),
         strides=1,
         padding='same',
@@ -468,7 +494,7 @@ def build_model(input_shape=(4, 160, 192, 128), output_channels=3, weight_L2=0.1
     model.compile(
         adam(lr=learning_rate),
         loss(input_shape, inp, out_VAE, z_mean, z_var, weight_L2=weight_L2, weight_KL=weight_KL),
-        metrics=[dice_coefficient_square, weighted_dice_coefficient]
+        metrics=[weighted_dice_coefficient, dice_whole_tumor, dice_tumor_core, dice_enhancing_tumor_core]
     )
 
     return model
