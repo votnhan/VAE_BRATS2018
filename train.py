@@ -16,7 +16,7 @@ config["input_shape"] = tuple([config["nb_channels"]] + list(config["image_shape
 
 config["truth_channel"] = config["nb_channels"]
 
-config["batch_size"] = 2
+config["batch_size"] = 1
 config["validation_batch_size"] = 2
 config["n_epochs"] = 500  # cutoff the training after this many epochs
 config["patience"] = 2  # learning rate will be reduced after this many epochs if the validation loss is not improving
