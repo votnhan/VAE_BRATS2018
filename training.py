@@ -37,7 +37,7 @@ def get_callbacks(model_file, initial_learning_rate=0.0001, learning_rate_drop=0
 def load_old_model(model_file):
     print("Loading pre-trained model")
     input_shape = (4, 128, 128, 128)
-    initial_learning_rate = 3.125e-6
+    initial_learning_rate = 1e-4
     model = build_model(input_shape=input_shape, output_channels=4, learning_rate=initial_learning_rate)
     model.load_weights(model_file)
     return model
