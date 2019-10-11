@@ -225,7 +225,7 @@ def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight
         loss_dice = weighted_dice_coefficient(y_true, y_pred)
 
         return - loss_dice + weight_L2 * loss_L2 + weight_KL * loss_KL 
-        + weight_ce_loss*losses.categorical_crossentropy(y_true, y_pred)
+#        + weight_ce_loss*losses.categorical_crossentropy(y_true, y_pred)
 
     return loss_
 
