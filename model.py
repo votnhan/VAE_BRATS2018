@@ -214,7 +214,7 @@ def loss(input_shape, inp, out_VAE, z_mean, z_var, e=1e-8, weight_L2=0.1, weight
         axis=-1
     )
 
-    weight_ce_loss = 0.1
+    weight_ce_loss = 0.01
 
     def loss_(y_true, y_pred):
         # y_true_f = K.flatten(y_true)
