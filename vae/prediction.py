@@ -13,7 +13,10 @@ def run_validation_cases(validation_keys_file, model_file, training_modalities, 
     model = load_old_model(model_file)
     data_file = tables.open_file(hdf5_file, "r")
     for index in validation_indices:
-        case_directory = os.path.join(output_dir, "validation_case_{}".format(index))
+        if 'subject_ids' in data_file.root:
+            case_directory = os.path.join(output_dir, data_file.root.subject_ids[index].decode('utf-8'))
+        else:
+            case_directory = os.path.join(output_dir, "validation_case_{}".format(index))
         run_validation_case(data_index=index, output_dir=case_directory, model=model, data_file=data_file,
                             training_modalities=training_modalities, output_label_map=output_label_map, labels=labels)
     
@@ -43,7 +46,7 @@ def run_validation_case(data_index, output_dir, model, data_file, training_modal
             image.to_filename(os.path.join(output_dir, "prediction_{0}.nii.gz".format(i + 1)))
     else:
         prediction_image.to_filename(os.path.join(output_dir, "prediction.nii.gz"))
-        
+
 
 def predict(model, data, permute=False):
     if permute:
