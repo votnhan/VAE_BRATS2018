@@ -38,45 +38,50 @@ config["training_file"] = os.path.abspath("isensee_training_ids.pkl")
 config["validation_file"] = os.path.abspath("isensee_validation_ids.pkl")
 config["overwrite"] = False  # If True, will previous files. If False, will use previously written files.
 
-data_file_opened = open_data_file(config["data_file"])
+def main():
 
-# Tao train, validation generator
-train_generator, validation_generator, n_train_steps, n_validation_steps = get_training_and_validation_generators(
-    data_file_opened,
-    batch_size=config["batch_size"],
-    data_split=config["validation_split"],
-    overwrite=config["overwrite"],
-    validation_keys_file=config["validation_file"],
-    training_keys_file=config["training_file"],
-    n_labels=config["n_labels"],
-    labels=config["labels"],
-    validation_batch_size=config["validation_batch_size"],
-    permute=config["permute"],
-    augment=config["augment"],
-    skip_blank=config["skip_blank"],
-    augment_flip=config["flip"],
-    augment_distortion_factor=config["distort"])
+    data_file_opened = open_data_file(config["data_file"])
+
+    # Tao train, validation generator
+    train_generator, validation_generator, n_train_steps, n_validation_steps = get_training_and_validation_generators(
+        data_file_opened,
+        batch_size=config["batch_size"],
+        data_split=config["validation_split"],
+        overwrite=config["overwrite"],
+        validation_keys_file=config["validation_file"],
+        training_keys_file=config["training_file"],
+        n_labels=config["n_labels"],
+        labels=config["labels"],
+        validation_batch_size=config["validation_batch_size"],
+        permute=config["permute"],
+        augment=config["augment"],
+        skip_blank=config["skip_blank"],
+        augment_flip=config["flip"],
+        augment_distortion_factor=config["distort"])
 
 
-# Build model
+    # Build model
 
-if not config["overwrite"] and os.path.exists(config["model_file"]):
-    model = load_old_model(config["model_file"])
-else:
-    # Tao model moi
-    model = build_model(input_shape=config["input_shape"], output_channels=4, learning_rate=config["initial_learning_rate"])
+    if not config["overwrite"] and os.path.exists(config["model_file"]):
+        model = load_old_model(config["model_file"])
+    else:
+        # Tao model moi
+        model = build_model(input_shape=config["input_shape"], output_channels=4, learning_rate=config["initial_learning_rate"])
 
-# run training
-train_model(model=model,
-            model_file=config["model_file"],
-            training_generator=train_generator,
-            validation_generator=validation_generator,
-            steps_per_epoch=n_train_steps,
-            validation_steps=n_validation_steps,
-            initial_learning_rate=config["initial_learning_rate"],
-            learning_rate_drop=config["learning_rate_drop"],
-            learning_rate_patience=config["patience"],
-            early_stopping_patience=config["early_stop"],
-            n_epochs=config["n_epochs"])
+    # run training
+    train_model(model=model,
+                model_file=config["model_file"],
+                training_generator=train_generator,
+                validation_generator=validation_generator,
+                steps_per_epoch=n_train_steps,
+                validation_steps=n_validation_steps,
+                initial_learning_rate=config["initial_learning_rate"],
+                learning_rate_drop=config["learning_rate_drop"],
+                learning_rate_patience=config["patience"],
+                early_stopping_patience=config["early_stop"],
+                n_epochs=config["n_epochs"])
 
-data_file_opened.close()
+    data_file_opened.close()
+
+if __name__ == '__main__':
+    main()
